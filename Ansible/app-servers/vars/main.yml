@@ -1,0 +1,7 @@
+---
+# vars file for app-servers
+website_image_name: m2moun/simple-website
+website_image_tag: latest
+
+website_container_name: simple_website
+website_exposed_port: 80

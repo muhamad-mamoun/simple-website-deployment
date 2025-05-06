@@ -1,0 +1,85 @@
+---
+# tasks file for app-servers
+- name: Update and upgrade apt packages
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: Remove any packages that conflict with Docker
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - docker.io
+    - docker-doc
+    - docker-compose
+    - docker-compose-v2
+    - podman-docker
+    - containerd
+    - runc
+  ignore_errors: true
+
+- name: Install dependencies
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    - python3-setuptools
+    - python3-pip
+
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Get Docker GPG
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "a+r"
+
+- name: Get system architecture
+  command: dpkg --print-architecture
+  register: architecture
+
+- name: Get Ubuntu codename
+  command: bash -c ". /etc/os-release && echo \"${UBUNTU_CODENAME:-$VERSION_CODENAME}\""
+  register: codename
+
+- name: Add Docker repository to apt
+  copy:
+    content: "deb [arch={{ architecture.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ codename.stdout }} stable"
+    dest: /etc/apt/sources.list.d/docker.list
+
+- name: Update packages cache after adding Docker repo
+  apt:
+    update_cache: yes
+
+- name: Install Docker latest version
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+
+- name: Insure that there no running containers
+  shell: docker rm -f $(docker ps -aq)
+  ignore_errors: true
+
+- name: Create website container
+  command: docker run -d -p "{{ website_exposed_port }}":80 --name "{{ website_container_name }}" "{{ website_image_name }}":"{{ website_image_tag }}"
+
+- name: Create Jenkins container
+  command: docker run -d -u root -p 8080:8080 -v ~/jenkins_home:/var/jenkins_home -v /var/run:/var/run --name jenkins jenkins/jenkins:lts
+  notify: get_jenkins_password

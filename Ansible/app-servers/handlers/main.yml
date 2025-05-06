@@ -1,0 +1,10 @@
+---
+# handlers file for app-servers
+- name: get_jenkins_password
+  command: docker exec -u root jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+  register: jenkins_password
+  notify: display_jenkins_password
+
+- name: display_jenkins_password
+  debug:
+    var: jenkins_password.stdout

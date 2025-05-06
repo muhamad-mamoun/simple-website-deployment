@@ -1,0 +1,5 @@
+- name: Prepare Application Server
+  remote_user: ubuntu
+  hosts: app_servers
+  roles:
+    - app-servers
