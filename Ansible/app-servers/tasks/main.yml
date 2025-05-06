@@ -83,3 +83,7 @@
 - name: Create Jenkins container
   command: docker run -d -u root -p 8080:8080 -v ~/jenkins_home:/var/jenkins_home -v /var/run:/var/run --name jenkins jenkins/jenkins:lts
   notify: get_jenkins_password
+  register: jenkins_container_task
+
+- name: Copy Docker CLI inside Jenkins container
+  command: docker cp /usr/bin/docker jenkins:/usr/bin

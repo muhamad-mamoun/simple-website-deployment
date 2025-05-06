@@ -4,7 +4,9 @@
   command: docker exec -u root jenkins cat /var/jenkins_home/secrets/initialAdminPassword
   register: jenkins_password
   notify: display_jenkins_password
+  ignore_errors: true
 
 - name: display_jenkins_password
   debug:
     var: jenkins_password.stdout
+  ignore_errors: true
