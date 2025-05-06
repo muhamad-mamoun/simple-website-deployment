@@ -11,3 +11,17 @@ module "compute" {
 
   depends_on = [module.network]
 }
+
+resource "null_resource" "invoke_ansible_playbook" {
+  provisioner "local-exec" {
+    command = <<END
+              set -e;
+              cd ../Ansible;
+              echo "[app_servers]" > inventory.ini;
+              echo "${module.compute.instance_public_ip}" >> inventory.ini;
+              ansible-playbook -i inventory.ini playbook.yaml > output.log;
+              END
+  }
+
+  depends_on = [module.compute]
+}
